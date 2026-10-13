@@ -28,23 +28,50 @@ function Field({ label, ...input }: { label: string } & ComponentProps<"input">)
 /** /contact: short and direct. The form lives above the fold; the full Terms
  *  & Conditions follow below as a collapsed-by-default accordion. */
 export default function ContactPage() {
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [note, setNote] = useState("");
   const [copied, setCopied] = useState(false);
   const wired = !contact.email.includes("[ADD"); // form activates once email is set in content.ts
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const name = String(data.get("name") ?? "");
-    const from = String(data.get("email") ?? "");
-    const message = String(data.get("message") ?? "");
-    if (!wired) {
-      setNote("Form is ready. Add your email in lib/content.ts (contact.email) and it opens a pre-filled email.");
-      return;
+    const form = e.currentTarget;
+    const data = new FormData(form);
+
+    if (data.get("botcheck")) return;
+
+    setStatus("submitting");
+    setNote("Sending message...");
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          access_key: "5bb796fb-1344-468c-a00f-d80b68f0b4ee",
+          name: data.get("name"),
+          email: data.get("email"),
+          message: data.get("message"),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setStatus("success");
+        setNote("Message sent successfully! I'll get back to you soon.");
+        form.reset();
+      } else {
+        setStatus("error");
+        setNote(result.message || "Failed to send message. Please try again.");
+      }
+    } catch {
+      setStatus("error");
+      setNote("Network error. Please try again or reach out directly via email.");
     }
-    const body = encodeURIComponent(`${message}\n\n${name} (${from})`);
-    window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(`Project inquiry from ${name}`)}&body=${body}`;
-    setNote("Opening your email app…");
   }
 
   async function copyEmail() {
@@ -131,6 +158,7 @@ export default function ContactPage() {
 
           <Reveal delay={0.12} className="lg:col-span-7">
             <form onSubmit={onSubmit} className="flex h-full flex-col gap-7 rounded-2xl border border-line bg-surface p-6 sm:p-9">
+              <input type="checkbox" name="botcheck" style={{ display: "none" }} />
               <div className="grid gap-7 sm:grid-cols-2">
                 <Field label="Name" name="name" autoComplete="name" required />
                 <Field label="Email" name="email" type="email" autoComplete="email" required />
@@ -163,9 +191,16 @@ export default function ContactPage() {
                 <Magnetic>
                   <button
                     type="submit"
-                    className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-accent-fg transition-opacity duration-300 hover:opacity-85"
+                    disabled={status === "submitting"}
+                    className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-accent-fg transition-opacity duration-300 hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Send message <span aria-hidden>↗</span>
+                    {status === "submitting" ? (
+                      "Sending..."
+                    ) : (
+                      <>
+                        Send message <span aria-hidden>↗</span>
+                      </>
+                    )}
                   </button>
                 </Magnetic>
               </div>
