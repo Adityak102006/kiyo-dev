@@ -1,0 +1,160 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════
+   PALETTE · "Ink & Ember"
+   Light mode: warm bone paper + warm near-black ink, calm and print-like.
+   Dark mode: espresso black + cream, same warmth with more focus.
+   ONE accent (ember orange) carries every interactive cue on the site, so
+   attention is always guided and never scattered. Warm neutrals were chosen
+   deliberately over the default blue/purple web look: they read "crafted
+   studio", and the single ember accent stays unmistakable in both themes.
+   All colors live in CSS vars (switchable at runtime), mapped into Tailwind
+   tokens via `@theme inline` below → utilities like bg-bg, text-fg,
+   text-accent respond to the `.dark` class automatically.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg: #f7f4ec;
+  --bg-2: #efe9dc;
+  --surface: #fdfbf5;
+  --fg: #211a12;
+  --muted: #6e6353;
+  --line: #e0d6c3;
+  --accent: #d9481c;
+  --accent-fg: #fff6ef;
+  --accent-soft: rgba(217, 72, 28, 0.09);
+  --glow: rgba(217, 72, 28, 0.16);
+}
+
+.dark {
+  --bg: #171210;
+  --bg-2: #1d1713;
+  --surface: #231c15;
+  --fg: #ece4d6;
+  --muted: #a79b8a;
+  --line: #352b20;
+  --accent: #ff6a3a;
+  --accent-fg: #2a1206;
+  --accent-soft: rgba(255, 106, 58, 0.1);
+  --glow: rgba(255, 106, 58, 0.14);
+}
+
+/* Class-based dark mode for Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-surface: var(--surface);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+/* ── Base ────────────────────────────────────────────────────────── */
+html { color-scheme: light; }
+html.dark { color-scheme: dark; }
+
+body {
+  @apply overflow-x-clip bg-bg font-sans text-fg antialiased;
+}
+
+::selection { background: var(--accent); color: var(--accent-fg); }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 8px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+/* ── Theme crossfade ────────────────────────────────────────────────
+   The toggle briefly adds .theme-anim to <html>: every surface then
+   transitions its *colors* (paint-only, cheap) for one soft 0.5s pass. */
+html.theme-anim,
+html.theme-anim *,
+html.theme-anim *::before,
+html.theme-anim *::after {
+  transition: background-color 0.5s ease, border-color 0.5s ease, color 0.5s ease,
+    fill 0.5s ease, stroke 0.5s ease, opacity 0.5s ease !important;
+}
+
+/* ── Page shell (shared container) ───────────────────────────────── */
+.shell {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 80rem; /* 1280px: comfortable on laptops, airy on 1920px */
+  padding-inline: 1.25rem;
+}
+@media (min-width: 640px) {
+  .shell { padding-inline: 2rem; }
+}
+
+/* ── Decorative helpers (transform-only keyframes → GPU friendly) ── */
+
+@keyframes spin360 { to { transform: rotate(360deg); } }
+.spin-slow { transform-box: fill-box; transform-origin: center; animation: spin360 44s linear infinite; }
+.spin-slower { transform-box: fill-box; transform-origin: center; animation: spin360 70s linear infinite reverse; }
+
+@keyframes pulseDot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.7); opacity: 0.45; } }
+.animate-pulse-dot { animation: pulseDot 2.2s ease-in-out infinite; }
+.pulse-origin { transform-box: fill-box; transform-origin: center; }
+
+@keyframes floatY { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
+.animate-float-y { animation: floatY 1.8s ease-in-out infinite; }
+
+@keyframes marquee { to { transform: translateX(-50%); } }
+.marquee-track { animation: marquee 32s linear infinite; }
+
+
+/* Blueprint grid used by project placeholder previews */
+.blueprint {
+  background-image: linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* Pre-blurred radial glow (no filter: blur needed, paint-cheap) */
+.glow { background: radial-gradient(closest-side, var(--glow), transparent 72%); }
+
+/* Huge outlined section numbers (parallax layer) */
+.ghost-text {
+  color: var(--bg-2);
+  -webkit-text-stroke: 1.5px var(--line);
+}
+@supports (-webkit-text-stroke: 1px black) {
+  .ghost-text { color: transparent; }
+}
+
+/* Film grain overlay: inline SVG data URI, zero network cost */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* Smooth anchor scrolling (cards → case studies, footer → terms, skip link).
+   Gated behind no-preference so reduced-motion users get instant jumps. */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track, .spin-slow, .spin-slower, .animate-pulse-dot, .animate-float-y {
+    animation: none !important;
+  }
+}
