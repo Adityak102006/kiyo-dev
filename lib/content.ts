@@ -235,7 +235,7 @@ export const experience = {
     },
     {
       role: "BTech · Computer Science & Engineering",
-      org: "[ADD INSTITUTE NAME]",
+      org: "Quantum University",
       period: "2nd year · 3rd semester · present",
       points: ["Studying computer science fundamentals alongside freelance work."],
     },
